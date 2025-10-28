@@ -20,7 +20,7 @@ function loadOutletsFromCSV() {
         error: function(error) {
             console.error("Error loading CSV:", error);
             document.getElementById('nearest-outlet-name').textContent = 'Error loading outlet data.';
-            initMap(37.0902, -95.7129); // Show map with default center even if data fails
+            initMap(6.738379, 80.027515); // Show map with default center even if data fails
         }
     });
 }
@@ -55,7 +55,6 @@ function findNearestOutlet(userLat, userLng) {
     let minDistance = Infinity;
 
     outlets.forEach(outlet => {
-        // Ensure lat/lng are treated as numbers (Papa Parse handles this if dynamicTyping: true)
         const distance = haversineDistance(userLat, userLng, outlet.lat, outlet.lng);
         outlet.distance = distance; 
 
@@ -79,24 +78,27 @@ function success(position) {
     // 1. Update UI with nearest outlet info
     document.getElementById('nearest-outlet-name').textContent = nearestOutlet.name;
     
-    // 2. Create Google Maps Link (for directions from user to outlet)
+    // 2. Create Google Maps Link for the Nearest Outlet
     const googleMapsUrl = `https://www.google.com/maps/dir/${userLat},${userLng}/${nearestOutlet.lat},${nearestOutlet.lng}`;
     
     document.getElementById('nearest-outlet-link').innerHTML = 
         `<a href="${googleMapsUrl}" target="_blank">Get Directions on Google Maps</a>`;
 
-    // 3. Initialize Map
+    // 3. Initialize Map, passing user location and nearest outlet
     initMap(userLat, userLng, nearestOutlet);
 }
 
 // ** STEP 6: GEOLOCATION ERROR HANDLER **
 function error() {
+    // Hide the nearest outlet header
+    document.querySelector('#nearest-info h4').style.display = 'none';
+
     // Handle error gracefully
     document.getElementById('nearest-outlet-name').textContent = 'Location access denied.';
     document.getElementById('nearest-outlet-link').textContent = 'Please enable location services to find your nearest outlet.';
     
     // Initialize map on a default center, showing all loaded outlets
-    initMap(37.0902, -95.7129); 
+    initMap(6.738379, 80.027515); 
 }
 
 // ** STEP 7: MAP INTEGRATION (Leaflet) **
@@ -106,8 +108,11 @@ function initMap(centerLat, centerLng, nearestOutlet = null) {
         container._leaflet_id = null;
     }
 
-    // Set zoom level based on whether nearest outlet was found
-    const zoom = nearestOutlet ? 12 : 5; 
+    // Determine if user location was successfully obtained
+    const hasUserLocation = nearestOutlet !== null;
+
+    // Set zoom level based on whether location was found
+    const zoom = hasUserLocation ? 8 : 5; 
     const map = L.map('mapid').setView([centerLat, centerLng], zoom);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -116,7 +121,7 @@ function initMap(centerLat, centerLng, nearestOutlet = null) {
     }).addTo(map);
 
     // Add user marker only if location was successfully obtained
-    if (nearestOutlet) {
+    if (hasUserLocation) {
         L.marker([centerLat, centerLng])
             .addTo(map)
             .bindPopup("You Are Here")
@@ -130,10 +135,20 @@ function initMap(centerLat, centerLng, nearestOutlet = null) {
         const marker = L.marker([outlet.lat, outlet.lng]).addTo(map);
         
         let popupContent = `<b>${outlet.name}</b>`;
-        
+
+        if (hasUserLocation) {
+            // URL for directions from user location to this specific outlet
+            const directionUrl = `https://www.google.com/maps/dir/${centerLat},${centerLng}/${outlet.lat},${outlet.lng}`;
+            popupContent += `<br><a href="${directionUrl}" target="_blank">Find on Google Maps</a>`;
+        } else {
+            // If we don't have user location, just show the outlet on the map
+            const searchUrl = `https://www.google.com/maps/search/?api=1&query=${outlet.lat},${outlet.lng}`;
+            popupContent += `<br><a href="${searchUrl}" target="_blank">View on Google Maps</a>`;
+        }
+
         // Highlight the nearest one
         if (nearestOutlet && outlet.name === nearestOutlet.name) {
-            popupContent += `<br><b>(Your Nearest ENERG1 Outlet)</b>`;
+            popupContent = `<b>(Your Nearest ENERG1 Outlet)</b><br>` + popupContent;
             marker.setIcon(L.divIcon({className: 'nearest-marker', html: '🔴'})); 
             marker.setZIndexOffset(1000); 
         }

@@ -8,10 +8,10 @@ body {
 }
 
 header {
-    background-color: #000; /* Changed to black */
+    background-color: #000;
     color: white;
     padding: 1px;
-    margin-bottom: 0; /* Remove bottom margin to reduce space with slogan */
+    margin-bottom: 0;
 }
 
 .logo-container {
@@ -20,40 +20,37 @@ header {
 }
 
 #company-logo {
-    /* Adjusted for rectangular logo, removed border-radius and padding */
-    height: 100px; /* Adjust as needed */
+    height: 100px;
     width: auto;
-    /* max-width: 100%; Ensure it doesn't overflow on small screens */
 }
 
 h1 {
-    margin-top: 5px; /* Add a little space between logo and title */
+    margin-top: 5px;
     margin-bottom: 0;
 }
 
 h3 {
-    margin-top: 0px; /* Add a little space between logo and title */
+    margin-top: 0px;
     margin-bottom: 20px;
 }
 
 h4 {
-    margin-top: 10px; /* Add a little space between logo and title */
+    margin-top: 10px;
     margin-bottom: 0px;
 }
 
 p {
-    margin-top: 10px; /* Add a little space between logo and title */
+    margin-top: 10px;
     margin-bottom: 10px;
 }
 
 #slogan-container {
-    background-color: #f0f0f0; /* Light grey background for the slogan section */
+    background-color: #f0f0f0;
     padding: 15px;
     margin-bottom: 20px;
     color: #555;
     font-size: 1.1em;
 }
-
 
 #map-container {
     width: 95%;
@@ -65,7 +62,7 @@ p {
 }
 
 #mapid {
-    height: 500px; 
+    height: 450px; 
     width: 100%;
 }
 
@@ -77,6 +74,7 @@ p {
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     border-radius: 5px;
     overflow: hidden;
+    text-align: center;
 }
 
 #nearest-outlet-name {
@@ -100,4 +98,8 @@ p {
 #nearest-outlet-link a:hover {
     background-color: #004d40;
     color: white;
+}
+
+.leaflet-popup-content {
+    text-align: center;
 }
