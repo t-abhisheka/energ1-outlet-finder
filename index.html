@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Your Nearest ENERG1 Outlet</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img id="company-logo" src="logo.jpg" alt="ENERG1 Logo">
+        </div>
+        <h3>ENERG1 Outlets Finder</h3>
+    </header>
+
+    <div id="nearest-info" class="card">
+        <h4>Your Nearest ENERG1 Outlet:</h4>
+        <p id="nearest-outlet-name">Searching...</p>
+        <p id="nearest-outlet-link"></p>
+    </div>
+
+    <div id="map-container">
+        <div id="mapid"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
