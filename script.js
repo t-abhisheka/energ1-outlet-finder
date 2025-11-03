@@ -75,16 +75,41 @@ function success(position) {
     // Find the nearest outlet
     const nearestOutlet = findNearestOutlet(userLat, userLng);
 
-    // 1. Update UI with nearest outlet info
+    // 1. Log user location to Google Sheet via Apps Script Web App
+    const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycby4Mn8Rgvo1NyvTxBG4ckE_aEJOiBvhFnq8dJ3RAgyQIvrPGt0rKUM5SCt68IHHSYbn/exec'; // PASTE YOUR URL HERE
+
+    const logData = {
+        latitude: userLat,
+        longitude: userLng
+    };
+
+    fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        // The Apps Script expects the data as a JSON string
+        body: JSON.stringify(logData), 
+    })
+    .then(response => {
+        if (response.ok) {
+            console.log("Location data logged successfully to Google Sheet.");
+        } else {
+            console.error("Failed to log location data.");
+        }
+    })
+    .catch(error => console.error('Error sending location data:', error));
+
+    // 2. Update UI with nearest outlet info
     document.getElementById('nearest-outlet-name').textContent = nearestOutlet.name;
     
-    // 2. Create Google Maps Link for the Nearest Outlet
+    // 3. Create Google Maps Link for the Nearest Outlet
     const googleMapsUrl = `https://www.google.com/maps/dir/${userLat},${userLng}/${nearestOutlet.lat},${nearestOutlet.lng}`;
     
     document.getElementById('nearest-outlet-link').innerHTML = 
         `<a href="${googleMapsUrl}" target="_blank">Get Directions on Google Maps</a>`;
 
-    // 3. Initialize Map, passing user location and nearest outlet
+    // 4. Initialize Map, passing user location and nearest outlet
     initMap(userLat, userLng, nearestOutlet);
 }
 
