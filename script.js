@@ -85,6 +85,7 @@ function success(position) {
 
     fetch(API_ENDPOINT, {
         method: 'POST',
+        mode: 'no-cors',
         headers: {
             'Content-Type': 'application/json',
         },
@@ -93,9 +94,9 @@ function success(position) {
     })
     .then(response => {
         if (response.ok) {
-            console.log("Location data logged successfully to Google Sheet.");
+            console.log("CORS request sent successfully (status check unavailable in no-cors mode). Check Google Sheet for data.");
         } else {
-            console.error("Failed to log location data.");
+            console.error('Error sending location data:', error);
         }
     })
     .catch(error => console.error('Error sending location data:', error));
