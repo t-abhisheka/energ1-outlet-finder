@@ -103,3 +103,11 @@ p {
 .leaflet-popup-content {
     text-align: center;
 }
+
+.privacy-footer {
+    font-size: 0.8em;
+    color: #888;
+    margin-top: 15px;
+    margin-bottom: 20px;
+    padding: 0 10px;
+}
