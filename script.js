@@ -172,6 +172,11 @@ function initMap(centerLat, centerLng, nearestOutlet = null) {
             popupContent += `<br><a href="${searchUrl}" target="_blank">View on Google Maps</a>`;
         }
 
+        // Add phone number if it exists in the CSV data
+        if (outlet.phone) {
+            popupContent += `<br>Phone: <a href="tel:${outlet.phone}">0${outlet.phone}</a>`;
+        }
+
         // Highlight the nearest one
         if (nearestOutlet && outlet.name === nearestOutlet.name) {
             popupContent = `<b>(Your Nearest ENERG1 Outlet)</b><br>` + popupContent;
