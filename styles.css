@@ -1,12 +1,14 @@
+/* General Body Layout */
 body {
     font-family: sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f4f7f6;
+    background-color: #f4f7f6; /* Light gray background */
     color: #333;
     text-align: center;
 }
 
+/* Header Styling */
 header {
     background-color: #000;
     color: white;
@@ -24,6 +26,7 @@ header {
     width: auto;
 }
 
+/* Typography Overrides */
 h1 {
     margin-top: 5px;
     margin-bottom: 0;
@@ -44,28 +47,23 @@ p {
     margin-bottom: 10px;
 }
 
-#slogan-container {
-    background-color: #f0f0f0;
-    padding: 15px;
-    margin-bottom: 20px;
-    color: #555;
-    font-size: 1.1em;
-}
-
+/* Map Container Styling */
 #map-container {
     width: 95%;
-    max-width: 10000px;
+    max-width: 10000px; /* Essentially full width restricted by margin */
     margin: 10px auto;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     border-radius: 5px;
     overflow: hidden;
 }
 
+/* Leaflet Map Height */
 #mapid {
     height: 450px; 
     width: 100%;
 }
 
+/* Card Styling (White boxes for Search/Results) */
 .card {
     background-color: white;
     width: 95%;
@@ -77,12 +75,14 @@ p {
     text-align: center;
 }
 
+/* Result Text Styling */
 #nearest-outlet-name {
     font-size: 1.2em;
     font-weight: bold;
-    color: #004d40;
+    color: #004d40; /* Dark Teal Brand Color */
 }
 
+/* "Get Directions" Button Styling */
 #nearest-outlet-link a {
     color: #004d40;
     text-decoration: none;
@@ -100,10 +100,12 @@ p {
     color: white;
 }
 
+/* Fix popup text alignment */
 .leaflet-popup-content {
     text-align: center;
 }
 
+/* Footer Styling */
 .privacy-footer {
     font-size: 0.8em;
     color: #888;

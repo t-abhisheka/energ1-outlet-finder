@@ -4,43 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Find Your Nearest ENERG1 Outlet</title>
+    
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    
     <style>
-        /* CSS for Suggestion Box */
+        /* Container for input + dropdown */
         .search-wrapper {
             position: relative;
             width: 60%;
             display: inline-block;
         }
+        /* Search Input styling */
         #manual-input {
             width: 100%;
             padding: 10px;
             box-sizing: border-box; 
         }
+        /* Dropdown List Styling */
         #suggestions-list {
             position: absolute;
-            top: 100%;
+            top: 100%; /* Position directly below input */
             left: 0;
             right: 0;
             background: white;
             border: 1px solid #ddd;
             border-top: none;
-            z-index: 9999; /* High z-index to stay on top */
+            z-index: 9999; /* Ensure it floats on top of the map */
             list-style: none;
             margin: 0;
             padding: 0;
             text-align: left;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             max-height: 200px;
-            overflow-y: auto; /* Internal scrolling for the list itself */
-            display: none; 
+            overflow-y: auto; /* Scroll if list is long */
+            display: none;    /* Hidden by default */
         }
+        /* Individual suggestion items */
         #suggestions-list li {
             padding: 10px;
             cursor: pointer;
             border-bottom: 1px solid #eee;
-            background-color: white; /* Ensure background is solid */
+            background-color: white; 
         }
         #suggestions-list li:hover {
             background-color: #f0f0f0;
@@ -53,6 +58,7 @@
         }
     </style>
 </head>
+
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-1QNCQLMDWX"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -60,6 +66,7 @@
   gtag('js', new Date());
   gtag('config', 'G-1QNCQLMDWX');
 </script>
+
 <body>
     <header>
         <div class="logo-container">

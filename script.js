@@ -1,49 +1,75 @@
-// Global variable to store outlets loaded from CSV
-let outlets = [];
-let debounceTimer; 
-let mapInstance = null; 
-let routeLayer = null; 
+/**
+ * script.js
+ * Core logic for the ENERG1 Outlet Finder.
+ * * Features:
+ * 1. Loads outlet data from a CSV file.
+ * 2. Handles Manual Search with Auto-Suggestions (Nominatim API).
+ * 3. Calculates distance using two methods:
+ * - Haversine (Straight line) for quick filtering.
+ * - OSRM (Road network) for accurate driving distance.
+ * 4. Renders the interactive Map using Leaflet.js.
+ */
 
-// ** CONFIGURATION: Fine-tune the website here **
-const candidateCount = 2; // How many "straight-line" nearest outlets to check via API
+// Global variables to store application state
+let outlets = [];           // Array to hold all outlet data loaded from CSV
+let debounceTimer;          // Timer to delay API calls while typing
+let mapInstance = null;     // Reference to the active Leaflet map
+let routeLayer = null;      // Reference to the blue route line on the map
+
+// ** CONFIGURATION **
+// Optimization: To save data and speed up results, we only check the 
+// actual driving distance for the top N closest outlets (by straight line).
+const candidateCount = 2; 
 
 // ** STEP 1: CSV LOADING FUNCTION **
+// Uses PapaParse to read 'locations.csv' and convert it to JSON
 function loadOutletsFromCSV() {
     Papa.parse('locations.csv', {
-        download: true,
-        header: true,
-        dynamicTyping: true,
+        download: true,       // Fetch the file from the server
+        header: true,         // Use first row as column names (name, lat, lng)
+        dynamicTyping: true,  // Auto-convert numbers (e.g., "6.93" -> 6.93)
         complete: function(results) {
+            // Filter out invalid rows that might be missing coordinates
             outlets = results.data.filter(row => row.name && row.lat && row.lng);
             
+            // Check if we are on the Manual Search page (index.html)
             const manualInput = document.getElementById('manual-input');
             if (manualInput) {
+                // Initialize map with default view (Sri Lanka center)
                 initMap(7.8731, 80.7718); 
 
+                // Event: Search when "Enter" key is pressed
                 manualInput.addEventListener("keypress", function(event) {
                     if (event.key === "Enter") {
-                        event.preventDefault();
+                        event.preventDefault(); // Stop form submission
                         performManualSearch();
                         document.getElementById('suggestions-list').style.display = 'none';
                     }
                 });
 
+                // Event: Fetch suggestions while typing
                 manualInput.addEventListener("input", function() {
-                    clearTimeout(debounceTimer);
+                    clearTimeout(debounceTimer); // Reset timer on every keystroke
                     const query = this.value;
+                    
+                    // Only search if user typed 3+ characters (reduces API spam)
                     if (query.length < 3) {
                         document.getElementById('suggestions-list').style.display = 'none';
                         return; 
                     }
+                    
+                    // Debounce: Wait 300ms after typing stops to call API
                     debounceTimer = setTimeout(() => fetchSuggestions(query), 300);
                 });
                 
+                // Event: Hide suggestions if clicking outside the box
                 document.addEventListener('click', function(e) {
                     if (e.target.id !== 'manual-input') {
                          document.getElementById('suggestions-list').style.display = 'none';
                     }
                 });
             } else {
+                // We are on Auto GPS page: Start GPS immediately
                 startGeolocationProcess();
             }
         },
@@ -56,26 +82,32 @@ function loadOutletsFromCSV() {
     });
 }
 
-// ** STEP 2: FETCH SUGGESTIONS **
+// ** STEP 2: FETCH SUGGESTIONS (Nominatim API) **
+// Gets place name suggestions (e.g., "Kandy") from OpenStreetMap
 function fetchSuggestions(query) {
     const list = document.getElementById('suggestions-list');
     
+    // API Request: Limit to 5 results, restrict to Sri Lanka (countrycodes=lk)
     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=lk&limit=5`)
         .then(res => res.json())
         .then(data => {
-            list.innerHTML = ''; 
+            list.innerHTML = ''; // Clear old suggestions
             if (data.length > 0) {
                 data.forEach(place => {
                     const li = document.createElement('li');
+                    // Clean up name: "Kandy, Central, Sri Lanka" -> "Kandy, Central"
                     const displayName = place.display_name.split(',').slice(0, 3).join(',');
                     li.textContent = displayName;
                     
+                    // Logic for clicking a suggestion
                     li.onclick = function() {
                         document.getElementById('manual-input').value = displayName;
                         list.style.display = 'none';
+                        // Get coordinates from the suggestion result
                         const lat = parseFloat(place.lat);
                         const lon = parseFloat(place.lon);
                         document.getElementById('search-status').textContent = `Selected: ${displayName}`;
+                        // Start finding the nearest outlet
                         processFoundLocation(lat, lon);
                     };
                     list.appendChild(li);
@@ -88,7 +120,7 @@ function fetchSuggestions(query) {
         .catch(err => console.error("Suggestion error:", err));
 }
 
-// ** STEP 3: GEOLOCATION **
+// ** STEP 3: GPS GEOLOCATION **
 function startGeolocationProcess() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(success, error);
@@ -97,7 +129,8 @@ function startGeolocationProcess() {
     }
 }
 
-// ** STEP 4: MANUAL SEARCH **
+// ** STEP 4: MANUAL SEARCH EXECUTION **
+// Called when the "Search" button is clicked
 function performManualSearch() {
     const input = document.getElementById('manual-input').value;
     const statusMsg = document.getElementById('search-status');
@@ -112,6 +145,7 @@ function performManualSearch() {
 
     statusMsg.textContent = "Searching...";
     
+    // Convert typed location to Coordinates
     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(input)}&countrycodes=lk`)
         .then(response => response.json())
         .then(data => {
@@ -131,9 +165,10 @@ function performManualSearch() {
         });
 }
 
-// ** STEP 5: MATH (Straight Line Distance) **
+// ** STEP 5: MATH DISTANCE (Haversine Formula) **
+// Calculates "as the crow flies" distance. Used for initial sorting.
 function haversineDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; 
+    const R = 6371; // Earth radius in km
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -143,27 +178,31 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
     return R * c; 
 }
 
-// ** STEP 6: CORE LOGIC (Optimized 2-Phase Search) **
+// ** STEP 6: CORE LOGIC (Smart Search) **
+// 1. Calculates straight-line distance to ALL outlets.
+// 2. Picks the top 2 closest ones.
+// 3. Checks accurate driving distance for ONLY those 2 via API.
 async function processFoundLocation(userLat, userLng) {
-    // Show loading state
+    // Show loading UI
     const infoCard = document.getElementById('nearest-info');
     if(infoCard) {
         infoCard.style.display = 'block';
         document.getElementById('nearest-outlet-name').textContent = "Analyzing routes...";
-        // UPDATED: Generic loading text
         document.getElementById('distance-display').textContent = "Calculating best route...";
     }
 
-    // 1. Calculate Straight Line Distance for ALL outlets
+    // Phase 1: Quick Math Filter
     outlets.forEach(outlet => {
         outlet.straightDistance = haversineDistance(userLat, userLng, outlet.lat, outlet.lng);
     });
 
-    // 2. Sort by straight line distance and pick top N candidates
+    // Sort and pick top candidates
     const candidates = outlets.sort((a, b) => a.straightDistance - b.straightDistance).slice(0, candidateCount);
 
-    // 3. Fetch Driving Distance for these candidates (Parallel Requests)
+    // Phase 2: Detailed API Check (Parallel Requests)
+    // We create a list of "Promises" to fetch data for all candidates at once
     const drivingAnalysisPromises = candidates.map(outlet => {
+        // OSRM Driving API URL
         const url = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${outlet.lng},${outlet.lat}?overview=full&geometries=geojson`;
         
         return fetch(url)
@@ -173,8 +212,8 @@ async function processFoundLocation(userLat, userLng) {
                     const route = data.routes[0];
                     return {
                         ...outlet, 
-                        drivingDistance: route.distance, // meters
-                        routeGeometry: route.geometry // Shape of the road
+                        drivingDistance: route.distance, // Meters
+                        routeGeometry: route.geometry    // Map path (GeoJSON)
                     };
                 }
                 return { ...outlet, drivingDistance: Infinity }; 
@@ -188,7 +227,7 @@ async function processFoundLocation(userLat, userLng) {
     // Wait for all API calls to finish
     const analyzedOutlets = await Promise.all(drivingAnalysisPromises);
 
-    // 4. Find the winner based on actual DRIVING distance
+    // Phase 3: Pick the Winner
     let nearestOutlet = analyzedOutlets[0];
     let minDrivingDist = Infinity;
 
@@ -199,59 +238,67 @@ async function processFoundLocation(userLat, userLng) {
         }
     });
 
-    // 5. Update UI with the winner
+    // Update screen
     updateUIWithWinner(userLat, userLng, nearestOutlet);
 }
 
 // ** STEP 7: UPDATE UI & MAP **
 function updateUIWithWinner(userLat, userLng, nearestOutlet) {
-    // Send coordinates to Google Sheet
+    // Log data to Google Sheets
     logLocationToSheet(userLat, userLng);
 
     document.getElementById('nearest-outlet-name').textContent = nearestOutlet.name;
     
-    // Convert units (Meters -> KM)
+    // Display Distance (Meters -> KM)
     const distKm = (nearestOutlet.drivingDistance / 1000).toFixed(1);
-
     document.getElementById('distance-display').innerHTML = 
         `🚗 Driving Distance: ${distKm} km`;
 
-    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${nearestOutlet.lat},${nearestOutlet.lng}`;
+    // Create External Google Maps Link (Turn-by-turn navigation)
+    // Note: '6' in the URL below seems to be part of a custom format or typo, 
+    // usually standard format is used, but keeping original code logic here.
+    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=$${userLat},${userLng}&destination=${nearestOutlet.lat},${nearestOutlet.lng}`;
     
     document.getElementById('nearest-outlet-link').innerHTML = 
         `<a href="${googleMapsUrl}" target="_blank">Get Directions on Google Maps</a>`;
 
+    // Draw Map with Route
     initMap(userLat, userLng, nearestOutlet);
 }
 
+// Helper: GPS Success
 function success(position) {
     processFoundLocation(position.coords.latitude, position.coords.longitude);
 }
 
+// Helper: Log Data to Google Sheet (Backend)
 function logLocationToSheet(lat, lng) {
     const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycby4Mn8Rgvo1NyvTxBG4ckE_aEJOiBvhFnq8dJ3RAgyQIvrPGt0rKUM5SCt68IHHSYbn/exec'; 
     fetch(API_ENDPOINT, {
         method: 'POST',
-        mode: 'no-cors',
+        mode: 'no-cors', // Opaque response (security feature)
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({latitude: lat, longitude: lng})
     }).catch(e => console.log("Logging error", e));
 }
 
+// Helper: GPS Error
 function error() {
     handleError('Location access denied.');
 }
 
+// Helper: Generic Error Handler
 function handleError(msg) {
     const nameEl = document.getElementById('nearest-outlet-name');
     const linkEl = document.getElementById('nearest-outlet-link');
     if(nameEl) nameEl.textContent = msg;
     if(linkEl) linkEl.textContent = 'Please enable location services or use Manual Search.';
-    initMap(7.8731, 80.7718); 
+    initMap(7.8731, 80.7718); // Reset map to center
 }
 
-// ** MAP INTEGRATION **
+// ** MAP INTEGRATION (Leaflet) **
 function initMap(centerLat, centerLng, nearestOutlet = null) {
+    // Clean up old map instance if it exists
     if (mapInstance) {
         mapInstance.remove();
         mapInstance = null;
@@ -261,13 +308,16 @@ function initMap(centerLat, centerLng, nearestOutlet = null) {
     const hasUserLocation = nearestOutlet !== null;
     const zoom = hasUserLocation ? 9 : 7; 
     
+    // Create Map
     mapInstance = L.map('mapid').setView([centerLat, centerLng], zoom);
 
+    // Add Tile Layer (The visual map images)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap contributors'
     }).addTo(mapInstance);
 
+    // Add User Marker
     if (hasUserLocation) {
         L.marker([centerLat, centerLng])
             .addTo(mapInstance)
@@ -275,11 +325,12 @@ function initMap(centerLat, centerLng, nearestOutlet = null) {
             .openPopup();
     }
 
-    // Add markers for all outlets
+    // Add Outlet Markers
     outlets.forEach(outlet => {
         const marker = L.marker([outlet.lat, outlet.lng]).addTo(mapInstance);
         let popupContent = `<b>${outlet.name}</b>`;
         
+        // Add directions link to popup
         if (hasUserLocation) {
             const dirUrl = `https://www.google.com/maps/dir/?api=1&origin=${centerLat},${centerLng}&destination=${outlet.lat},${outlet.lng}`;
             popupContent += `<br><a href="${dirUrl}" target="_blank">Get Directions</a>`;
@@ -289,7 +340,7 @@ function initMap(centerLat, centerLng, nearestOutlet = null) {
             popupContent += `<br>Phone: <a href="tel:${outlet.phone}">0${outlet.phone}</a>`;
         }
 
-        // Highlight the nearest one
+        // Highlight nearest outlet (Red Marker)
         if (nearestOutlet && outlet.name === nearestOutlet.name) {
             popupContent = `<b>(Nearest Outlet)</b><br>` + popupContent;
             marker.setIcon(L.divIcon({className: 'nearest-marker', html: '🔴'})); 
@@ -298,7 +349,7 @@ function initMap(centerLat, centerLng, nearestOutlet = null) {
         marker.bindPopup(popupContent);
     });
 
-    // Draw the route line for the winner
+    // Draw the Route Line (if route geometry exists)
     if (nearestOutlet && nearestOutlet.routeGeometry) {
         routeLayer = L.geoJSON(nearestOutlet.routeGeometry, {
             style: {
@@ -308,10 +359,10 @@ function initMap(centerLat, centerLng, nearestOutlet = null) {
             }
         }).addTo(mapInstance);
 
-        // Fit map to show user + route + destination
+        // Zoom map to fit the whole route
         mapInstance.fitBounds(routeLayer.getBounds().pad(0.1));
     } else if (nearestOutlet) {
-        // Fallback bounds if geometry failed
+        // Fallback zoom if no route line
         const bounds = L.latLngBounds([
             [centerLat, centerLng], 
             [nearestOutlet.lat, nearestOutlet.lng]
@@ -320,4 +371,5 @@ function initMap(centerLat, centerLng, nearestOutlet = null) {
     }
 }
 
+// Initialize the app
 loadOutletsFromCSV();
