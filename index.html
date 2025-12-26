@@ -6,14 +6,58 @@
     <title>Find Your Nearest ENERG1 Outlet</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        /* CSS for Suggestion Box */
+        .search-wrapper {
+            position: relative;
+            width: 60%;
+            display: inline-block;
+        }
+        #manual-input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box; 
+        }
+        #suggestions-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            z-index: 9999; /* High z-index to stay on top */
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            text-align: left;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-height: 200px;
+            overflow-y: auto; /* Internal scrolling for the list itself */
+            display: none; 
+        }
+        #suggestions-list li {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            background-color: white; /* Ensure background is solid */
+        }
+        #suggestions-list li:hover {
+            background-color: #f0f0f0;
+        }
+        .input-group {
+             display: flex; 
+             justify-content: center; 
+             gap: 10px; 
+             margin-top: 10px;
+        }
+    </style>
 </head>
-<!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-1QNCQLMDWX"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-1QNCQLMDWX');
 </script>
 <body>
@@ -22,11 +66,30 @@
             <img id="company-logo" src="logo.jpg" alt="ENERG1 Logo">
         </div>
         <h3>ENERG1 Outlets Finder</h3>
+        <nav style="margin-bottom: 15px;">
+            <a href="index.html" style="color: #00e5ff; font-weight: bold; margin-right: 15px;">Manual Search</a>
+            <a href="auto.html" style="color: white;">Auto GPS</a>
+        </nav>
     </header>
 
-    <div id="nearest-info" class="card">
-        <h4>Your Nearest ENERG1 Outlet:</h4>
-        <p id="nearest-outlet-name">Searching...</p>
+    <div class="card" style="padding: 20px; overflow: visible;">
+        <h4>Enter Your Location</h4>
+        
+        <div class="input-group">
+            <div class="search-wrapper">
+                <input type="text" id="manual-input" placeholder="e.g., Kandy, Colombo 7" autocomplete="off">
+                <ul id="suggestions-list"></ul>
+            </div>
+            <button onclick="performManualSearch()" style="padding: 10px 20px; background-color: #004d40; color: white; border: none; cursor: pointer; height: 38px;">Search</button>
+        </div>
+        
+        <p id="search-status" style="font-size: 0.9em; color: #666; margin-top: 10px;"></p>
+    </div>
+
+    <div id="nearest-info" class="card" style="display:none;">
+        <h4>Nearest Outlet Result:</h4>
+        <p id="nearest-outlet-name"></p>
+        <p id="distance-display" style="font-weight: bold; color: #555;"></p>
         <p id="nearest-outlet-link"></p>
     </div>
 
@@ -35,7 +98,7 @@
     </div>
 
     <p class="privacy-footer">
-        By allowing location access, you consent to us logging your coordinates for marketing analysis.
+        Search powered by OpenStreetMap.
     </p>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
