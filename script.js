@@ -1,7 +1,7 @@
 /**
  * script.js
  * Core logic for the ENERG1 Outlet Finder.
- * * Features:
+ * Features:
  * 1. Loads outlet data from a CSV file.
  * 2. Handles Manual Search with Auto-Suggestions (Nominatim API).
  * 3. Calculates distance using two methods:
@@ -254,10 +254,9 @@ function updateUIWithWinner(userLat, userLng, nearestOutlet) {
     document.getElementById('distance-display').innerHTML = 
         `🚗 Driving Distance: ${distKm} km`;
 
-    // Create External Google Maps Link (Turn-by-turn navigation)
-    // Note: '6' in the URL below seems to be part of a custom format or typo, 
-    // usually standard format is used, but keeping original code logic here.
-    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=$${userLat},${userLng}&destination=${nearestOutlet.lat},${nearestOutlet.lng}`;
+    // **FIXED GOOGLE MAPS LINK**
+    // Using the official "dir" (direction) API format
+    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${nearestOutlet.lat},${nearestOutlet.lng}`;
     
     document.getElementById('nearest-outlet-link').innerHTML = 
         `<a href="${googleMapsUrl}" target="_blank">Get Directions on Google Maps</a>`;
@@ -330,7 +329,7 @@ function initMap(centerLat, centerLng, nearestOutlet = null) {
         const marker = L.marker([outlet.lat, outlet.lng]).addTo(mapInstance);
         let popupContent = `<b>${outlet.name}</b>`;
         
-        // Add directions link to popup
+        // Add directions link to popup - FIXED URL
         if (hasUserLocation) {
             const dirUrl = `https://www.google.com/maps/dir/?api=1&origin=${centerLat},${centerLng}&destination=${outlet.lat},${outlet.lng}`;
             popupContent += `<br><a href="${dirUrl}" target="_blank">Get Directions</a>`;
