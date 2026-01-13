@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Route Builder - ENERG1</title>
+    
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    
+    <style>
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        .control-row { display: flex; gap: 10px; align-items: center; justify-content: center; }
+        .control-label { font-weight: bold; font-size: 0.9em; color: #555; width: 100px; text-align: right; }
+        select { padding: 10px; font-size: 14px; border-radius: 5px; border: 1px solid #ccc; flex-grow: 1; max-width: 300px; }
+
+        .btn { padding: 10px 15px; border: none; cursor: pointer; border-radius: 5px; font-weight: bold; color: white; font-size: 14px; min-width: 80px; }
+        .btn-add { background-color: #00897b; }
+        .btn-group { background-color: #0277bd; }
+        .btn-go { background-color: #004d40; width: 100%; margin-top: 15px; font-size: 1.1em; }
+        .btn-edit { background-color: #f57c00; width: 100%; margin-top: 10px; display: none; }
+        .btn-clear { background-color: #c62828; margin-left: auto; }
+        .btn:hover { opacity: 0.9; }
+
+        /* Google Maps Button */
+        .gmaps-btn {
+            background-color: #4285F4;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 5px;
+            display: inline-block;
+            border: 1px solid #3367D6;
+        }
+        .gmaps-btn:hover { background-color: #3367D6; }
+
+        .list-container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 0;
+            background: #fff;
+            min-height: 150px;
+            max-height: 400px;
+            overflow-y: auto;
+            text-align: left;
+        }
+        .empty-msg { color: #999; text-align: center; padding: 20px; font-style: italic; }
+
+        .checkbox-item { display: flex; align-items: center; border-bottom: 1px solid #eee; padding: 10px; }
+        .checkbox-item input { transform: scale(1.3); margin-right: 15px; cursor: pointer; }
+        .checkbox-item label { flex-grow: 1; cursor: pointer; font-size: 1em; }
+        .remove-icon { color: #d32f2f; cursor: pointer; font-weight: bold; padding: 0 5px; }
+
+        .sequence-item {
+            padding: 12px 10px;
+            border-bottom: 1px solid #f9f9f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #fff;
+        }
+        .name-group { display: flex; align-items: center; text-align: left; }
+        .action-group { white-space: nowrap; margin-left: 10px; font-size: 0.9em; color: #ccc; }
+        .stop-badge { background: #004d40; color: white; border-radius: 50%; width: 24px; height: 24px; display: inline-block; text-align: center; line-height: 24px; font-size: 12px; font-weight: bold; margin-right: 10px; flex-shrink: 0; }
+        .nav-link { color: #004d40; text-decoration: none; font-weight: bold; margin: 0 5px; }
+        .nav-link:hover { text-decoration: underline; }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo-container">
+            <img id="company-logo" src="logo.jpg" alt="ENERG1 Logo">
+        </div>
+        <h3>ENERG1 Outlets Finder</h3>
+        <nav style="margin-bottom: 15px;">
+            <a href="index.html" style="color: white; margin-right: 15px;">Manual Search</a>
+            <a href="auto.html" style="color: white; margin-right: 15px;">Auto GPS</a>
+            <a href="routes.html" style="color: white; margin-right: 15px;">Route Group</a>
+            <a href="custom_route.html" style="color: #00e5ff; font-weight: bold;">Custom Builder</a>
+        </nav>
+    </header>
+
+    <div class="card" style="padding: 20px;">
+        <h4>Build Your Route</h4>
+        <p>Add outlets, then click "Generate" to see the optimized sequence.</p>
+        
+        <div id="selection-controls" class="control-panel">
+            <div class="control-row">
+                <span class="control-label">Single Outlet:</span>
+                <select id="outlet-dropdown">
+                    <option value="" disabled selected>Select an outlet...</option>
+                </select>
+                <button class="btn btn-add" onclick="addSingleOutlet()">+ Add</button>
+            </div>
+            <div class="control-row">
+                <span class="control-label">Route Group:</span>
+                <select id="route-dropdown">
+                    <option value="" disabled selected>Select a region...</option>
+                </select>
+                <button class="btn btn-group" onclick="addRouteGroup()">+ Add Group</button>
+            </div>
+        </div>
+
+        <div id="list-header" style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+            <strong id="list-title">Your Selection:</strong>
+            <button id="btn-clear" class="btn btn-clear" style="padding: 5px 10px; margin:0;" onclick="clearAll()">Clear</button>
+        </div>
+        
+        <div class="list-container" id="main-list">
+            <div class="empty-msg">No outlets added yet.</div>
+        </div>
+
+        <button id="btn-generate" class="btn btn-go" onclick="calculateCustomRoute()">🚀 Generate Optimized Route</button>
+        <button id="btn-edit" class="btn btn-edit" onclick="editSelection()">✏️ Edit Selection / Recalculate</button>
+
+        <div id="route-stats" style="display:none; margin-top:15px; font-weight:bold; color:#555;"></div>
+    </div>
+
+    <div id="map-container">
+        <div id="mapid"></div>
+    </div>
+
+    <div id="google-maps-container" style="text-align: center; margin: 20px auto; padding-bottom: 30px;"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="custom_route.js"></script>
+</body>
+</html>

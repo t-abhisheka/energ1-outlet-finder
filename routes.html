@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Route Optimizer - ENERG1</title>
+    
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    
+    <style>
+        .controls-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px auto;
+            align-items: center;
+        }
+        
+        select {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            min-width: 200px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #004d40;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button:hover { background-color: #00695c; }
+
+        /* Google Maps Button Style */
+        .gmaps-btn {
+            background-color: #4285F4; /* Google Blue */
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 5px;
+            display: inline-block;
+            border: 1px solid #3367D6;
+        }
+        .gmaps-btn:hover { background-color: #3367D6; }
+
+        /* Unified List Styles */
+        .stop-list {
+            list-style: none;
+            padding: 0;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .sequence-item {
+            padding: 12px 10px;
+            border-bottom: 1px solid #f9f9f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between; 
+            background-color: #fff;
+        }
+
+        .name-group { display: flex; align-items: center; text-align: left; }
+        .action-group { white-space: nowrap; margin-left: 10px; font-size: 0.9em; color: #ccc; }
+        
+        .stop-badge {
+            background: #004d40;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+            text-align: center;
+            line-height: 24px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .nav-link { color: #004d40; text-decoration: none; font-weight: bold; margin: 0 5px; }
+        .nav-link:hover { text-decoration: underline; }
+
+        #route-details { text-align: left; padding: 15px; margin-bottom: 20px; }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo-container">
+            <img id="company-logo" src="logo.jpg" alt="ENERG1 Logo">
+        </div>
+        <h3>ENERG1 Outlets Finder</h3>
+        <nav style="margin-bottom: 15px;">
+            <a href="index.html" style="color: white; margin-right: 15px;">Manual Search</a>
+            <a href="auto.html" style="color: white; margin-right: 15px;">Auto GPS</a>
+            <a href="routes.html" style="color: #00e5ff; font-weight: bold; margin-right: 15px;">Route Group</a>
+            <a href="custom_route.html" style="color: white;">Custom Builder</a>
+        </nav>
+    </header>
+
+    <div class="card" style="padding: 20px;">
+        <h4>Delivery Route Optimizer</h4>
+        <p>Select a route region to generate the optimal path starting from the warehouse.</p>
+        
+        <div class="controls-container">
+            <select id="route-select">
+                <option value="" disabled selected>Select a Route...</option>
+            </select>
+            <button onclick="calculateAndDrawRoute()">Generate Route</button>
+        </div>
+
+        <div id="route-stats" style="display:none; margin-top:15px; font-weight:bold; color:#555;"></div>
+    </div>
+
+    <div class="card" id="route-details" style="display:none;">
+        <h4>Route Sequence:</h4>
+        <div id="stops-container" class="stop-list"></div>
+    </div>
+
+    <div id="map-container">
+        <div id="mapid"></div>
+    </div>
+
+    <div id="google-maps-container" style="text-align: center; margin: 20px auto; padding-bottom: 30px;">
+        </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="route_script.js"></script>
+</body>
+</html>
